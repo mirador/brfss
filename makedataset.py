@@ -104,6 +104,7 @@ def load_metadata(data_file, var_file, code_file, var_names, var_titles, var_typ
     reader = csv.reader(open(data_file, "r"), dialect="excel")
     var_names.extend(reader.next())
     for name in var_names:
+        var_titles[name] = name
         var_types[name] = 'int'
         var_ranges[name] = '0,100000'
 
