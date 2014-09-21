@@ -1,4 +1,4 @@
-## Behavioral Risk Factor and Surveillance System (BRFSS) Dataset
+## Behavioral Risk Factor Surveillance System (BRFSS) Dataset
 
 These scripts download the BRFSS data provided by [HHS VizRisk](http://www.hhsvizrisk.org/) 
 and format it as a mirador project.
