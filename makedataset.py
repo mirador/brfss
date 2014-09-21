@@ -1,5 +1,4 @@
 '''
-Converts several datasets from World Bank into Mirador format
 
 @copyright: Fathom Information Design 2014
 '''
@@ -21,8 +20,8 @@ def init_dataset(survey_year, output_folder):
         os.makedirs(output_folder)
 
     # Remove binary file, just in case
-    if os.path.isfile(output_folder + "data.bin"):
-        os.remove(output_folder + "data.bin")
+    if os.path.isfile(output_folder + "/data.bin"):
+        os.remove(output_folder + "/data.bin")
 
     # Creating Mirador configuration file
     template_config = "config.mira"
@@ -144,8 +143,8 @@ def load_metadata(data_file, var_file, code_file, var_names, var_titles, var_typ
         name = row[5]
         lbound = row[8]
         ubound = row[9]
-        value = row[10]
-                
+        value = (''.join(char for char in row[10] if ord(char) < 128)).replace(";", "")
+                            
         if name in var_names:
             if name0 != name and lbounds:
                 set_var_type(name0, lbounds, ubounds, values, var_types, var_ranges)  
@@ -153,9 +152,9 @@ def load_metadata(data_file, var_file, code_file, var_names, var_titles, var_typ
                 ubounds = []
                 values = []
                 
-            lbounds.append(row[8])
-            ubounds.append(row[9])
-            values.append(''.join(char for char in row[10] if ord(char) < 128))
+            lbounds.append(lbound)
+            ubounds.append(ubound)
+            values.append(value)
             name0 = name
 
     if name0 and lbounds:
@@ -179,8 +178,7 @@ def load_data(data_file, var_names, var_types, data):
                     fval = float(val0)
                     if var_types[name] == 'int' and not fval.is_integer():
                         var_types[name] = 'float'
-                        print 'variable',name,'is float'
-                    val1 = val0                
+                    val1 = val0
                 except ValueError:
                     val1 = missing_str                 
             row1.append(val1) 
@@ -188,6 +186,15 @@ def load_data(data_file, var_names, var_types, data):
             
         data.append(row1)
     print "Done"
+    
+def save_dictionary(dict_file, var_names, var_titles, var_types, var_ranges):
+    print "Saving dictionary..."
+    dfile = open(dict_file, "w")
+    for var in var_names:
+        line = var_titles[var] + '\t' + var_types[var] + '\t' + var_ranges[var] + '\n'   
+        dfile.write(line)  
+    dfile.close()
+    print "Done."
     
 def save_groups(filename, var_groups):
     print "Saving groups..."
@@ -217,13 +224,22 @@ def save_groups(filename, var_groups):
         print "Done."
     except:
         sys.stderr.write("XML validation error:\n")
-        raise      
+        raise
+        
+def save_data(data_file, var_names, data):
+    print "Saving data..."
+    writer = csv.writer(open(data_file, "w"), dialect="excel-tab")
+    writer.writerow(var_names)
+    for row in data: 
+        writer.writerow(row)
+    print "Done."        
     
 ##########################################################################################    
 
+survey_year = sys.argv[1]
+
 source_folder = "Survey/"
 missing_str = "\\N"
-survey_year = "2011"
 output_folder = "mirador/" + survey_year
 
 var_names = []
@@ -239,20 +255,8 @@ code_file = source_folder + "codebook-" + survey_year + ".csv"
 
 init_dataset(survey_year, output_folder)
 load_metadata(data_file, var_file, code_file, var_names, var_titles, var_types, var_ranges, var_groups);
-
+load_data(data_file, var_names, var_types, data);
 
 save_dictionary(output_folder + "/dictionary.tsv", var_names, var_titles, var_types, var_ranges)
 save_groups(output_folder + "/groups.xml", var_groups)
-
-sys.exit(1)
-
-load_data(data_file, var_names, var_types, data);
-
-
-
-# load_dictionary(source_folder + "varlist-" + survey_year + ".csv", var_names, dictionary);
-
-
-
-
-
+save_data(output_folder + "/data.tsv", var_names, data);
