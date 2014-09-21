@@ -1,5 +1,7 @@
 '''
 
+Converts the BRFSS 2011 and 2012 data provided in the VizRisk competition into Mirador format
+
 @copyright: Fathom Information Design 2014
 '''
 
@@ -239,7 +241,7 @@ def save_data(data_file, var_names, data):
 
 survey_year = sys.argv[1]
 
-source_folder = "Survey/"
+source_folder = "source/vizrisk/"
 missing_str = "\\N"
 output_folder = "mirador/" + survey_year
 
