@@ -120,7 +120,9 @@ def load_metadata(data_file, var_file, code_file, var_names, var_titles, var_typ
         var_name = row[5]
         var_title = row[6]
         
-        if var_name in var_names:        
+        if var_name in var_names:     
+            if grp_name == "Weighting" or grp_name == "Land and Cell Raking":
+                print var_name, var_title
             if grp_name in var_groups:
                 group = var_groups[grp_name]
             else:
