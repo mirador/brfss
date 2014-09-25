@@ -35,7 +35,7 @@ def init_dataset(survey_year, output_folder):
     for line in lines:
         line = line.strip()
         if line == "project.title=":
-            line = line + "Behavioral Risk Factor Surveillance System Data " + survey_year
+            line = line + "Behavioral Risk Factor Surveillance System " + survey_year
         project_file.write(line + '\n') 
     template_file.close()
     project_file.close()
@@ -101,7 +101,7 @@ def set_var_type(name, lbounds, ubounds, values, var_types, var_ranges):
                 range_str = range_str + ";" + cod + ":" + special_values[cod]
             var_ranges[name] = range_str
 
-def load_metadata(data_file, var_file, code_file, var_names, var_titles, var_types, var_ranges, var_groups):
+def load_metadata(data_file, var_file, code_file, var_names, var_titles, var_types, var_ranges, var_groups, weight_vars):
     print "Loading metadata..."
     reader = csv.reader(open(data_file, "r"), dialect="excel")
     var_names.extend(reader.next())
@@ -122,7 +122,8 @@ def load_metadata(data_file, var_file, code_file, var_names, var_titles, var_typ
         
         if var_name in var_names:     
             if grp_name == "Weighting" or grp_name == "Land and Cell Raking":
-                print var_name, var_title
+                weight_vars.append(var_name)
+#                 print var_name, var_title
             if grp_name in var_groups:
                 group = var_groups[grp_name]
             else:
@@ -192,11 +193,20 @@ def load_data(data_file, var_names, var_types, data):
         data.append(row1)
     print "Done"
     
-def save_dictionary(dict_file, var_names, var_titles, var_types, var_ranges):
+def save_dictionary(dict_file, var_names, var_titles, var_types, var_ranges, weight_vars):
+    use_weights = "_LLCPWT" in weight_vars
     print "Saving dictionary..."
     dfile = open(dict_file, "w")
     for var in var_names:
-        line = var_titles[var] + '\t' + var_types[var] + '\t' + var_ranges[var] + '\n'   
+        weight_str = ""
+        if use_weights:
+            weight_str = '\t'
+            if var in weight_vars:
+                weight_str = weight_str + "sample weight"
+            else:
+                weight_str = weight_str + "_LLCPWT"
+        
+        line = var_titles[var] + '\t' + var_types[var] + '\t' + var_ranges[var] + weight_str +'\n'
         dfile.write(line)  
     dfile.close()
     print "Done."
@@ -210,9 +220,10 @@ def save_groups(filename, var_groups):
     write_xml_line('<?xml version="1.0"?>', xml_file, xml_strings)
     write_xml_line('<data>', xml_file, xml_strings)
     for gname in var_groups:
+        if gname in ["State", "Weighting", "Land and Cell Raking"]: continue            
         write_xml_line(' <group name="' + gname + '">', xml_file, xml_strings)
         group = var_groups[gname]
-        for tname in group:             
+        for tname in group:
             write_xml_line('  <table name="' + tname + '">', xml_file, xml_strings)
             table = group[tname]
             for var in table:
@@ -248,6 +259,7 @@ missing_str = "\\N"
 output_folder = "mirador/" + survey_year
 
 var_names = []
+weight_vars = []
 var_titles = {}
 var_types = {}
 var_ranges = {}
@@ -259,9 +271,9 @@ var_file = source_folder + "varlist-" + survey_year + ".csv"
 code_file = source_folder + "codebook-" + survey_year + ".csv"
 
 init_dataset(survey_year, output_folder)
-load_metadata(data_file, var_file, code_file, var_names, var_titles, var_types, var_ranges, var_groups);
+load_metadata(data_file, var_file, code_file, var_names, var_titles, var_types, var_ranges, var_groups, weight_vars);
 load_data(data_file, var_names, var_types, data);
 
-save_dictionary(output_folder + "/dictionary.tsv", var_names, var_titles, var_types, var_ranges)
+save_dictionary(output_folder + "/dictionary.tsv", var_names, var_titles, var_types, var_ranges, weight_vars)
 save_groups(output_folder + "/groups.xml", var_groups)
 save_data(output_folder + "/data.tsv", var_names, data);
